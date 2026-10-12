@@ -614,13 +614,15 @@
         el["v-rationale"].textContent = "This view isn't allowed to use Claude, so the studio can't place the scenario.";
         state.sample = null;
       } else if (code === "invalid_key") {
-        el["v-rationale"].textContent = "The Claude API rejected the key. Create a key at console.anthropic.com (it starts with sk-ant-api03-), put it in ANTHROPIC_API_KEY in Vercel, and redeploy.";
+        el["v-rationale"].textContent = "The Claude API rejected the key. Create a key at console.anthropic.com (it starts with sk-ant-api03-), put it in ANTHROPIC_API_KEY in your host's settings (Netlify or Vercel), and redeploy." +
+          (err && err.message ? " Details: " + err.message : "");
       } else if (code === "missing_key") {
         el["v-rationale"].textContent = "The server has no Claude API key yet. Add ANTHROPIC_API_KEY in the Vercel project settings and redeploy.";
       } else if (code === "rate_limited") {
         el["v-rationale"].textContent = "Claude is busy right now. Wait a minute and read it again.";
       } else {
-        el["v-rationale"].textContent = "Something went wrong reading the scenario. Try again, or rephrase it.";
+        el["v-rationale"].textContent = "Something went wrong reading the scenario. Try again, or rephrase it." +
+          (err && err.message ? " Details: " + err.message : "");
       }
     }).then(function () {
       el["f-read"].disabled = false;
@@ -766,7 +768,7 @@
         return r.json().catch(function () { return {}; }).then(function (d) {
           if (!r.ok) {
             if (d && d.message) console.error("Claude API:", d.message);
-            throw { code: (d && d.error) || "error" };
+            throw { code: (d && d.error) || ("http_" + r.status), message: (d && d.message) || ("Server returned " + r.status) };
           }
           return String(d.text || "");
         });
