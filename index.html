@@ -613,6 +613,8 @@
       if (code === "not_granted" || code === "sampling_disabled") {
         el["v-rationale"].textContent = "This view isn't allowed to use Claude, so the studio can't place the scenario.";
         state.sample = null;
+      } else if (code === "invalid_key") {
+        el["v-rationale"].textContent = "The Claude API rejected the key. Create a key at console.anthropic.com (it starts with sk-ant-api03-), put it in ANTHROPIC_API_KEY in Vercel, and redeploy.";
       } else if (code === "missing_key") {
         el["v-rationale"].textContent = "The server has no Claude API key yet. Add ANTHROPIC_API_KEY in the Vercel project settings and redeploy.";
       } else if (code === "rate_limited") {

@@ -38,8 +38,11 @@ module.exports = async function handler(req, res) {
     var data = await r.json().catch(function () { return {}; });
     if (!r.ok) {
       var msg = data && data.error && data.error.message;
+      var code = r.status === 429 ? "rate_limited"
+        : (r.status === 401 || r.status === 403) ? "invalid_key"
+        : "upstream_error";
       return res.status(r.status === 429 ? 429 : 502).json({
-        error: r.status === 429 ? "rate_limited" : "upstream_error",
+        error: code,
         message: msg || ("Claude API returned " + r.status)
       });
     }
