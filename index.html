@@ -1,0 +1,784 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BCF Scenario Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&family=Source+Sans+3:wght@400;500;600;700&display=swap">
+<style>
+  /* Layout: stepped workbench — compose a scenario, read its BCF placement, then draft and review the artifact. */
+  :root {
+    --bg: #f5f6f4;
+    --surface: #ffffff;
+    --surface-2: #eceeea;
+    --line: #dde0da;
+    --line-soft: #e8eae5;
+    --ink: #1b201d;
+    --ink-soft: #596159;
+    --ink-faint: #868f86;
+    --accent: #186b63;
+    --accent-soft: #e2efec;
+    --on-accent: #ffffff;
+    --inner: #a8432e;
+    --inner-soft: #f7e7e2;
+    --boundary: #9a6b12;
+    --boundary-soft: #f8eedb;
+    --outer: #2f6b3c;
+    --outer-soft: #e4f0e5;
+    --display: "Instrument Serif", Georgia, "Times New Roman", serif;
+    --ui: "Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --data: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #141715;
+      --surface: #1c201e;
+      --surface-2: #242925;
+      --line: #333933;
+      --line-soft: #2a302b;
+      --ink: #e9ece8;
+      --ink-soft: #a0a8a0;
+      --ink-faint: #79817a;
+      --accent: #5fc4b6;
+      --accent-soft: #1b312e;
+      --on-accent: #10201e;
+      --inner: #e0866f;
+      --inner-soft: #33211c;
+      --boundary: #d6a84a;
+      --boundary-soft: #322917;
+      --outer: #7bc08a;
+      --outer-soft: #1d2b20;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #141715;
+    --surface: #1c201e;
+    --surface-2: #242925;
+    --line: #333933;
+    --line-soft: #2a302b;
+    --ink: #e9ece8;
+    --ink-soft: #a0a8a0;
+    --ink-faint: #79817a;
+    --accent: #5fc4b6;
+    --accent-soft: #1b312e;
+    --on-accent: #10201e;
+    --inner: #e0866f;
+    --inner-soft: #33211c;
+    --boundary: #d6a84a;
+    --boundary-soft: #322917;
+    --outer: #7bc08a;
+    --outer-soft: #1d2b20;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg); color: var(--ink);
+    font-family: var(--ui); font-size: 15px; line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 56rem; margin: 0 auto; padding-inline: 20px; padding-block: 2.5rem 4rem; }
+
+  .mast { margin-bottom: 2rem; }
+  .eyebrow { font-size: .67rem; letter-spacing: .15em; text-transform: uppercase; color: var(--ink-faint); font-weight: 700; }
+  h1 {
+    font-family: var(--display); font-weight: 400; font-size: clamp(2.1rem, 7vw, 3rem);
+    margin: .25rem 0 0; line-height: 1.05; letter-spacing: -.01em; text-wrap: balance;
+  }
+  .sub { color: var(--ink-soft); margin: .5rem 0 0; max-width: 40rem; }
+
+  .step { margin-top: 2rem; }
+  .step-head { display: flex; align-items: baseline; gap: .7rem; margin-bottom: .9rem; }
+  .step-num {
+    font-family: var(--data); font-size: .7rem; font-weight: 500; color: var(--accent);
+    border: 1px solid var(--accent); border-radius: 999px; padding: .1rem .5rem; flex: none;
+  }
+  .step-title { font-family: var(--display); font-size: 1.5rem; font-weight: 400; margin: 0; letter-spacing: -.005em; }
+
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 1.35rem; }
+
+  .preset-lab { font-size: .8rem; color: var(--ink-faint); margin-bottom: .5rem; }
+  .chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: 1.1rem; }
+  .chip {
+    font-family: var(--ui); font-size: .8rem; font-weight: 500; cursor: pointer;
+    background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-soft);
+    border-radius: 999px; padding: .32rem .75rem;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--ink); }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: .9rem; }
+  @media (max-width: 620px) { .grid2 { grid-template-columns: 1fr; } }
+  .field { display: flex; flex-direction: column; gap: .3rem; min-width: 0; }
+  .field.full { margin-top: .9rem; }
+  label { font-size: .67rem; letter-spacing: .11em; text-transform: uppercase; color: var(--ink-faint); font-weight: 700; }
+  input, select, textarea {
+    font-family: var(--ui); font-size: .95rem; color: var(--ink); width: 100%;
+    background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: .55rem .65rem;
+  }
+  textarea { resize: vertical; min-height: 5rem; line-height: 1.5; }
+  input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 1px;
+  }
+
+  button {
+    font-family: var(--ui); font-size: .9rem; font-weight: 600; cursor: pointer;
+    border-radius: 8px; border: 1px solid transparent; padding: .55rem 1.1rem;
+  }
+  button:disabled { opacity: .45; cursor: default; }
+  .btn-primary { background: var(--accent); color: var(--on-accent); }
+  .btn-quiet { background: transparent; border-color: var(--line); color: var(--ink-soft); font-weight: 500; font-size: .83rem; padding: .4rem .8rem; }
+  .foot { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1.1rem; flex-wrap: wrap; }
+  .toast { font-size: .83rem; color: var(--ink-soft); }
+
+  /* Verdict */
+  .verdict { display: grid; grid-template-columns: 240px 1fr; gap: 1.6rem; align-items: start; }
+  @media (max-width: 680px) { .verdict { grid-template-columns: 1fr; } }
+  .dial { width: 100%; max-width: 240px; height: auto; margin-inline: auto; display: block; }
+  .ring { fill: none; stroke-width: 1.5; }
+  .ring-fill { stroke: none; }
+  .dial-cap {
+    font-family: var(--data); font-size: 9px; letter-spacing: .08em; text-transform: uppercase;
+  }
+
+  .zone-name { font-family: var(--display); font-size: 1.7rem; margin: 0; line-height: 1.1; }
+  .zone-head { font-size: .95rem; color: var(--ink-soft); margin: .25rem 0 0; }
+  .rationale { margin: .9rem 0 0; }
+
+  .block-lab {
+    font-size: .64rem; letter-spacing: .13em; text-transform: uppercase; font-weight: 700;
+    color: var(--ink-faint); margin: 1.3rem 0 .5rem;
+  }
+  .rules { display: flex; flex-direction: column; gap: .5rem; }
+  .rule {
+    display: flex; gap: .65rem; align-items: flex-start;
+    padding: .6rem .75rem; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--line-soft);
+  }
+  .rule-dot { width: 8px; height: 8px; border-radius: 999px; margin-top: .42rem; flex: none; }
+  .rule-name { font-weight: 600; font-size: .9rem; }
+  .rule-detail { font-size: .88rem; color: var(--ink-soft); }
+  .s-stop .rule-dot { background: var(--inner); }
+  .s-caution .rule-dot { background: var(--boundary); }
+  .s-clear .rule-dot { background: var(--outer); }
+
+  ul.plain { margin: 0; padding-left: 1.15rem; }
+  ul.plain li { margin-top: .3rem; }
+  .shift { margin-top: 1.2rem; padding: .85rem 1rem; border-left: 2px solid var(--accent); background: var(--accent-soft); border-radius: 0 8px 8px 0; font-size: .92rem; }
+
+  .review { white-space: pre-wrap; margin: 0; line-height: 1.6; }
+  .review-box { margin-top: 1.1rem; padding: 1rem 1.15rem; background: var(--surface-2); border: 1px solid var(--line-soft); border-radius: 10px; }
+
+  /* Saved */
+  .saved-item {
+    display: flex; align-items: center; gap: .75rem; padding: .7rem 0;
+    border-top: 1px solid var(--line-soft); cursor: pointer;
+  }
+  .saved-item:first-child { border-top: none; }
+  .saved-badge {
+    font-family: var(--data); font-size: .62rem; letter-spacing: .07em; text-transform: uppercase;
+    padding: .18rem .45rem; border-radius: 4px; flex: none; font-weight: 500;
+  }
+  .b-inner { background: var(--inner-soft); color: var(--inner); }
+  .b-boundary { background: var(--boundary-soft); color: var(--boundary); }
+  .b-outer { background: var(--outer-soft); color: var(--outer); }
+  .saved-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .92rem; }
+  .saved-date { font-family: var(--data); font-size: .73rem; color: var(--ink-faint); flex: none; }
+
+  /* Reference */
+  details.ref { margin-top: 2.5rem; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+  details.ref > summary {
+    cursor: pointer; padding: 1rem 1.35rem; font-weight: 600; font-size: .95rem; list-style: none;
+  }
+  details.ref > summary::-webkit-details-marker { display: none; }
+  details.ref > summary::after { content: " ▾"; color: var(--ink-faint); }
+  details.ref[open] > summary::after { content: " ▴"; }
+  .ref-body { padding: 0 1.35rem 1.35rem; }
+  .ref-zone { margin-top: 1.1rem; padding-top: 1.1rem; border-top: 1px solid var(--line-soft); }
+  .ref-zone:first-child { border-top: none; padding-top: 0; }
+  .ref-zone h4 { margin: 0 0 .3rem; font-family: var(--display); font-weight: 400; font-size: 1.2rem; }
+  .ref-zone p { margin: 0 0 .4rem; font-size: .9rem; color: var(--ink-soft); }
+  .ref-zone ul { margin: 0; padding-left: 1.15rem; font-size: .9rem; color: var(--ink-soft); }
+  .cite { margin-top: 1.4rem; font-size: .8rem; color: var(--ink-faint); line-height: 1.5; }
+
+  .empty { color: var(--ink-soft); font-size: .92rem; padding: .5rem 0; }
+  .banner {
+    margin-bottom: 1.25rem; padding: .7rem .95rem; border-radius: 8px;
+    background: var(--surface-2); border: 1px solid var(--line); font-size: .86rem; color: var(--ink-soft);
+  }
+  [hidden] { display: none !important; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="mast">
+    <span class="eyebrow">Mindful AI Practitioner Certificate</span>
+    <h1>BCF Scenario Studio</h1>
+    <p class="sub">Describe something you want to do with AI in your teaching. The studio places it in the Bounded Convergence Framework, names the conditions it triggers, then lets you draft the artifact and review it against the zone it sits in.</p>
+  </header>
+
+  <div id="banner" class="banner" hidden></div>
+
+  <section class="step">
+    <div class="step-head">
+      <span class="step-num">01</span>
+      <h2 class="step-title">Compose the scenario</h2>
+    </div>
+    <div class="card">
+      <div class="preset-lab">Write your own below, or start from an example</div>
+      <div class="chips" id="presets"></div>
+      <form id="composer">
+        <div class="field">
+          <label for="f-intent">What you want to do</label>
+          <textarea id="f-intent" placeholder="Write a guided body-scan script for a student to use between sessions."></textarea>
+        </div>
+        <div class="grid2" style="margin-top:.9rem">
+          <div class="field">
+            <label for="f-role">What the AI does</label>
+            <select id="f-role">
+              <option>Drafts material I review before use</option>
+              <option>Delivers content directly to the student</option>
+              <option>Responds to the student conversationally</option>
+              <option>Summarizes or synthesizes for me</option>
+              <option>Tracks and reports practice data</option>
+              <option>No AI involved — I do this myself</option>
+              <option value="__other">Something else — I'll describe it</option>
+            </select>
+            <input type="text" id="f-role-other" placeholder="Describe the AI's role" hidden>
+          </div>
+          <div class="field">
+            <label for="f-who">Who receives it</label>
+            <select id="f-who">
+              <option>A student under 6 months of practice</option>
+              <option>A student 6–12 months in</option>
+              <option>An experienced practitioner</option>
+              <option>A group or cohort</option>
+              <option>Only me</option>
+              <option>An adolescent</option>
+              <option value="__other">Someone else — I'll describe them</option>
+            </select>
+            <input type="text" id="f-who-other" placeholder="Describe who receives it" hidden>
+          </div>
+        </div>
+        <div class="field full">
+          <label for="f-context">Anything else that matters</label>
+          <input type="text" id="f-context" placeholder="Optional — clinical setting, trauma history disclosed, no human teacher available, etc.">
+        </div>
+        <div class="foot">
+          <span class="toast" id="toast"></span>
+          <button type="submit" class="btn-primary" id="f-read">Read against the BCF</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section class="step" id="step-verdict" hidden>
+    <div class="step-head">
+      <span class="step-num">02</span>
+      <h2 class="step-title">Where it falls</h2>
+    </div>
+    <div class="card">
+      <div class="verdict">
+        <svg class="dial" id="dial" viewBox="0 0 240 240" role="img" aria-labelledby="dial-title">
+          <title id="dial-title">Bounded Convergence Framework zones</title>
+          <circle class="ring-fill" id="fill-outer" cx="120" cy="120" r="110"></circle>
+          <circle class="ring" id="ring-outer" cx="120" cy="120" r="110"></circle>
+          <circle class="ring-fill" id="fill-boundary" cx="120" cy="120" r="76"></circle>
+          <circle class="ring" id="ring-boundary" cx="120" cy="120" r="76"></circle>
+          <circle class="ring-fill" id="fill-inner" cx="120" cy="120" r="42"></circle>
+          <circle class="ring" id="ring-inner" cx="120" cy="120" r="42"></circle>
+          <text class="dial-cap" id="cap-inner" x="120" y="123" text-anchor="middle">Inner</text>
+          <text class="dial-cap" id="cap-boundary" x="120" y="63" text-anchor="middle">Boundary</text>
+          <text class="dial-cap" id="cap-outer" x="120" y="28" text-anchor="middle">Outer</text>
+        </svg>
+        <div>
+          <h3 class="zone-name" id="v-zone">Reading…</h3>
+          <p class="zone-head" id="v-headline"></p>
+          <p class="rationale" id="v-rationale"></p>
+
+          <div id="v-rules-wrap" hidden>
+            <div class="block-lab">Conditions in play</div>
+            <div class="rules" id="v-rules"></div>
+          </div>
+
+          <div id="v-safe-wrap" hidden>
+            <div class="block-lab">What this requires of you</div>
+            <ul class="plain" id="v-safeguards"></ul>
+          </div>
+
+          <div class="shift" id="v-shift" hidden></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="step" id="step-draft" hidden>
+    <div class="step-head">
+      <span class="step-num">03</span>
+      <h2 class="step-title">Draft and review</h2>
+    </div>
+    <div class="card">
+      <div class="field">
+        <label for="f-draft">Your artifact</label>
+        <textarea id="f-draft" style="min-height:11rem" placeholder="Write the actual thing — the meditation script, the check-in message, the curriculum outline, the words you would say."></textarea>
+      </div>
+      <div class="foot">
+        <span class="toast" id="toast2"></span>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+          <button type="button" class="btn-quiet" id="b-save">Save to portfolio</button>
+          <button type="button" class="btn-primary" id="b-review">Review against the BCF</button>
+        </div>
+      </div>
+      <div class="review-box" id="review-box" hidden>
+        <div class="block-lab" style="margin-top:0">Review</div>
+        <p class="review" id="review"></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="step">
+    <div class="step-head">
+      <span class="step-num">04</span>
+      <h2 class="step-title">Portfolio</h2>
+    </div>
+    <div class="card">
+      <div id="saved"><div class="empty">Scenarios you save appear here, with the zone each one landed in.</div></div>
+    </div>
+  </section>
+
+  <details class="ref">
+    <summary>The framework, in brief</summary>
+    <div class="ref-body">
+      <div class="ref-zone">
+        <h4>Inner periphery — irreducibly human</h4>
+        <p>Functions that depend on embodied presence and the capacity for authentic correction. Not delegable to AI.</p>
+        <ul>
+          <li>Formal meditation practice</li>
+          <li>Dharma and contemplative transmission</li>
+          <li>Course correction</li>
+          <li>Crisis attunement</li>
+          <li>Sangha as shared vulnerability</li>
+          <li>Embodied silence as contemplative technology</li>
+        </ul>
+      </div>
+      <div class="ref-zone">
+        <h4>Boundary zone — practitioner-governed</h4>
+        <p>AI may operate here only under teacher judgment, subject to three non-negotiable conditions.</p>
+        <ul>
+          <li><strong>Teacher threshold (6–12 months).</strong> Students eventually reach states only a human teacher can navigate.</li>
+          <li><strong>Crisis threshold.</strong> Suicidality, psychosis, and acute trauma always require human intervention.</li>
+          <li><strong>Containment principle.</strong> AI draws only on practitioner-approved content — vault-only sourcing.</li>
+        </ul>
+      </div>
+      <div class="ref-zone">
+        <h4>Outer periphery — AI-assisted under governance</h4>
+        <p>Functions AI may support, with a practitioner accountable for the result.</p>
+        <ul>
+          <li>Knowledge synthesis, curriculum design, practice scaffolding</li>
+          <li>Data and self-tracking, teacher archives, wearable biometric integration</li>
+          <li>Access and community extension, trauma-informed adaptation</li>
+        </ul>
+      </div>
+      <div class="ref-zone">
+        <h4>The sycophancy–delusion loop</h4>
+        <p>The framework's central design failure: AI that validates without challenging. Lost struggle produces flabby mindfulness; frictionless substitution erodes motivation for harder human relationships; commercial incentives reward both. Tools should de-center the self and leave users more connected to others, not less.</p>
+      </div>
+      <p class="cite">Haberlin, S. Governing AI at the clinical threshold: a grounded theory framework for responsible AI deployment in mindfulness-based mental health. <em>AI &amp; Society</em>. <a href="https://link.springer.com/article/10.1007/s00146-026-03341-x">doi.org/10.1007/s00146-026-03341-x</a></p>
+    </div>
+  </details>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var PRESETS = [
+    { label: "Script a meditation", intent: "Draft a 10-minute guided body-scan script that I will review and then deliver myself.", role: "Drafts material I review before use", who: "A student under 6 months of practice" },
+    { label: "Teach a student directly", intent: "Lead a live one-to-one sitting with a student and respond to what arises in the room.", role: "No AI involved — I do this myself", who: "A student under 6 months of practice" },
+    { label: "AI follow-up check-ins", intent: "Have an AI assistant message the student between sessions to ask how practice is going and answer their questions.", role: "Responds to the student conversationally", who: "A student under 6 months of practice" },
+    { label: "Build a course module", intent: "Use AI to design a four-week curriculum module on working with difficult emotions.", role: "Drafts material I review before use", who: "A group or cohort" },
+    { label: "Student in distress", intent: "A student messages at midnight describing intrusive thoughts and panic. The AI assistant answers first.", role: "Responds to the student conversationally", who: "A student under 6 months of practice" },
+    { label: "Practice dashboard", intent: "Give students an AI-generated weekly summary of their logged practice minutes and patterns.", role: "Tracks and reports practice data", who: "A group or cohort" }
+  ];
+
+  var ZONES = {
+    inner: { name: "Inner periphery", head: "Irreducibly human — not delegable to AI", color: "--inner", soft: "--inner-soft" },
+    boundary: { name: "Boundary zone", head: "Permitted only under practitioner governance", color: "--boundary", soft: "--boundary-soft" },
+    outer: { name: "Outer periphery", head: "AI-assisted, with a practitioner accountable", color: "--outer", soft: "--outer-soft" }
+  };
+
+  var FRAMEWORK =
+    "THE BOUNDED CONVERGENCE FRAMEWORK (Haberlin, AI & Society). A three-zone governance model for AI in mindfulness-based practice and education.\n\n" +
+    "INNER PERIPHERY — irreducibly human; depends on embodied presence and authentic correction; cannot be delegated to AI. Six functions: formal meditation practice; dharma/contemplative transmission; course correction; crisis attunement; sangha as shared vulnerability; embodied silence as contemplative technology.\n\n" +
+    "BOUNDARY ZONE — AI permitted only under teacher judgment, subject to three non-negotiable conditions: " +
+    "(1) TEACHER THRESHOLD — at roughly 6-12 months of practice a student reaches states only a human teacher can navigate; " +
+    "(2) CRISIS THRESHOLD — suicidality, psychosis and acute trauma always require human intervention; " +
+    "(3) CONTAINMENT PRINCIPLE (vault-only sourcing) — AI may draw only on practitioner-approved content.\n\n" +
+    "OUTER PERIPHERY — AI may assist, with a practitioner accountable for the result: knowledge synthesis; curriculum design; practice scaffolding; data and self-tracking; teacher archives; wearable biometric integration; access and community extension; trauma-informed adaptation.\n\n" +
+    "GOVERNANCE PRINCIPLES (16 non-negotiables) include: contraindication screening and clinical governance; crisis escalation architecture; AI identity disclosure; vault-only sourcing and containment; the Anti-Scaffolding Imperative; age restriction for adolescents; equity-informed governance; AI never serves as primary teacher.\n\n" +
+    "SYCOPHANCY-DELUSION LOOP — the central structural design failure. AI that validates without challenging. Lost struggle (unconditional validation removes the difficulty practitioners need, producing 'flabby mindfulness'); frictionless substitution (AI relationships reduce motivation for harder human ones); misaligned commercial incentives. Good design de-centers the self and leaves the user more connected to others.";
+
+  var state = { col: null, sample: null, scenario: null, verdict: null, saved: [], reviewCtl: null };
+
+  var el = {};
+  ["presets","composer","f-intent","f-role","f-who","f-role-other","f-who-other","f-context","f-read","toast","toast2","banner",
+   "step-verdict","step-draft","v-zone","v-headline","v-rationale","v-rules","v-rules-wrap",
+   "v-safeguards","v-safe-wrap","v-shift","f-draft","b-save","b-review","review","review-box","saved"
+  ].forEach(function (id) { el[id] = document.getElementById(id); });
+
+  // Free-text fallbacks on the two dropdowns.
+  function wireOther(sel, other) {
+    function sync() {
+      var on = sel.value === "__other";
+      other.hidden = !on;
+      if (on) other.focus();
+    }
+    sel.addEventListener("change", sync);
+    sync();
+  }
+  wireOther(el["f-role"], el["f-role-other"]);
+  wireOther(el["f-who"], el["f-who-other"]);
+
+  function readSelect(sel, other) {
+    if (sel.value === "__other") {
+      var v = other.value.trim();
+      return v || "not specified";
+    }
+    return sel.value;
+  }
+
+  function setSelect(sel, other, value) {
+    if (!value) return;
+    var match = Array.prototype.some.call(sel.options, function (o) {
+      if (o.value !== "__other" && o.text === value) { sel.value = o.text; return true; }
+      return false;
+    });
+    if (match) { other.value = ""; other.hidden = true; }
+    else { sel.value = "__other"; other.value = value; other.hidden = false; }
+  }
+
+  function flash(node, msg) {
+    node.textContent = msg;
+    setTimeout(function () { if (node.textContent === msg) node.textContent = ""; }, 3500);
+  }
+  function banner(msg) { el.banner.textContent = msg; el.banner.hidden = !msg; }
+
+  // ---------- presets ----------
+  PRESETS.forEach(function (p) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "chip";
+    b.textContent = p.label;
+    b.addEventListener("click", function () {
+      el["f-intent"].value = p.intent;
+      setSelect(el["f-role"], el["f-role-other"], p.role);
+      setSelect(el["f-who"], el["f-who-other"], p.who);
+      el["f-context"].value = "";
+      el["f-intent"].focus();
+      el["f-intent"].setSelectionRange(p.intent.length, p.intent.length);
+    });
+    el.presets.appendChild(b);
+  });
+
+  // ---------- dial ----------
+  function paintDial(zone) {
+    var map = { outer: "outer", boundary: "boundary", inner: "inner" };
+    Object.keys(map).forEach(function (k) {
+      var active = (k === zone);
+      var ring = document.getElementById("ring-" + k);
+      var fill = document.getElementById("fill-" + k);
+      var cap = document.getElementById("cap-" + k);
+      var col = "var(--" + k + ")";
+      ring.setAttribute("stroke", active ? col : "var(--line)");
+      ring.setAttribute("stroke-width", active ? "2.5" : "1.25");
+      fill.setAttribute("fill", active ? "var(--" + k + "-soft)" : "var(--surface)");
+      cap.setAttribute("fill", active ? col : "var(--ink-faint)");
+      cap.setAttribute("font-weight", active ? "600" : "400");
+    });
+  }
+  paintDial(null);
+
+  // ---------- classification ----------
+  function scenarioText(s) {
+    return "Intent: " + s.intent +
+      "\nWhat the AI does: " + s.role +
+      "\nWho receives it: " + s.who +
+      (s.context ? "\nOther context: " + s.context : "");
+  }
+
+  function classify(s) {
+    var prompt = FRAMEWORK +
+      "\n\n---\nA student in a Mindful AI Practitioner certificate program proposes the scenario below. " +
+      "Place it in exactly one zone and explain the placement in the framework's own terms.\n\n" +
+      scenarioText(s) +
+      "\n\n---\nReply with only a JSON object of this shape:\n" +
+      '{"zone":"inner"|"boundary"|"outer","headline":"one short clause naming the function at stake",' +
+      '"rationale":"2-3 sentences placing it, naming the specific BCF function(s) involved",' +
+      '"rules":[{"name":"Teacher threshold","status":"clear"|"caution"|"stop","detail":"one sentence"}],' +
+      '"safeguards":["imperative sentence",...],' +
+      '"shift":"one or two sentences on what change would move this to a different zone"}\n\n' +
+      "Include a rules entry for each of the three boundary conditions (Teacher threshold, Crisis threshold, Containment principle) " +
+      "plus any governance principle genuinely in play (for example AI identity disclosure, age restriction, contraindication screening). " +
+      'Use status "stop" where the framework forbids what is proposed, "caution" where it is conditional, "clear" where it is not engaged. ' +
+      "Give 2 to 5 safeguards, each a concrete action this practitioner must take. Be direct; do not soften a placement in the inner periphery.";
+
+    return state.sample.json(prompt, { modelTier: "default" });
+  }
+
+  function renderVerdict(v) {
+    var z = ZONES[v.zone] || ZONES.boundary;
+    paintDial(v.zone);
+    el["v-zone"].textContent = z.name;
+    el["v-zone"].style.color = "var(" + z.color + ")";
+    el["v-headline"].textContent = v.headline ? (z.head + " · " + v.headline) : z.head;
+    el["v-rationale"].textContent = v.rationale || "";
+
+    el["v-rules"].textContent = "";
+    var rules = Array.isArray(v.rules) ? v.rules : [];
+    rules.forEach(function (r) {
+      var row = document.createElement("div");
+      var st = (r.status === "stop" || r.status === "caution") ? r.status : "clear";
+      row.className = "rule s-" + st;
+      var dot = document.createElement("span");
+      dot.className = "rule-dot";
+      var body = document.createElement("div");
+      var nm = document.createElement("div");
+      nm.className = "rule-name";
+      nm.textContent = String(r.name || "Condition");
+      var dt = document.createElement("div");
+      dt.className = "rule-detail";
+      dt.textContent = String(r.detail || "");
+      body.appendChild(nm); body.appendChild(dt);
+      row.appendChild(dot); row.appendChild(body);
+      el["v-rules"].appendChild(row);
+    });
+    el["v-rules-wrap"].hidden = rules.length === 0;
+
+    el["v-safeguards"].textContent = "";
+    var sgs = Array.isArray(v.safeguards) ? v.safeguards : [];
+    sgs.forEach(function (sg) {
+      var li = document.createElement("li");
+      li.textContent = String(sg);
+      el["v-safeguards"].appendChild(li);
+    });
+    el["v-safe-wrap"].hidden = sgs.length === 0;
+
+    if (v.shift) {
+      el["v-shift"].textContent = String(v.shift);
+      el["v-shift"].hidden = false;
+    } else {
+      el["v-shift"].hidden = true;
+    }
+  }
+
+  el.composer.addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var intent = el["f-intent"].value.trim();
+    if (!intent) { flash(el.toast, "Describe what you want to do first."); return; }
+    if (!state.sample) { flash(el.toast, "The reading layer isn't available in this view."); return; }
+
+    state.scenario = {
+      intent: intent,
+      role: readSelect(el["f-role"], el["f-role-other"]),
+      who: readSelect(el["f-who"], el["f-who-other"]),
+      context: el["f-context"].value.trim()
+    };
+
+    el["f-read"].disabled = true;
+    el["f-read"].textContent = "Reading…";
+    el["step-verdict"].hidden = false;
+    el["v-zone"].textContent = "Reading…";
+    el["v-zone"].style.color = "var(--ink-soft)";
+    el["v-headline"].textContent = "";
+    el["v-rationale"].textContent = "";
+    el["v-rules-wrap"].hidden = true;
+    el["v-safe-wrap"].hidden = true;
+    el["v-shift"].hidden = true;
+    paintDial(null);
+    el["step-verdict"].scrollIntoView({ behavior: "smooth", block: "start" });
+
+    classify(state.scenario).then(function (v) {
+      if (!v || ["inner","boundary","outer"].indexOf(v.zone) === -1) throw { code: "invalid_json" };
+      state.verdict = v;
+      renderVerdict(v);
+      el["step-draft"].hidden = false;
+    }).catch(function (err) {
+      el["v-zone"].textContent = "Couldn't read it";
+      el["v-zone"].style.color = "var(--ink)";
+      var code = err && err.code;
+      if (code === "not_granted" || code === "sampling_disabled") {
+        el["v-rationale"].textContent = "This view isn't allowed to use Claude, so the studio can't place the scenario.";
+        state.sample = null;
+      } else if (code === "rate_limited") {
+        el["v-rationale"].textContent = "Claude is busy right now. Wait a minute and read it again.";
+      } else {
+        el["v-rationale"].textContent = "Something went wrong reading the scenario. Try again, or rephrase it.";
+      }
+    }).then(function () {
+      el["f-read"].disabled = false;
+      el["f-read"].textContent = "Read against the BCF";
+    });
+  });
+
+  // ---------- review ----------
+  el["b-review"].addEventListener("click", function () {
+    var draft = el["f-draft"].value.trim();
+    if (!draft) { flash(el.toast2, "Write the artifact first."); return; }
+    if (!state.sample || !state.verdict) { flash(el.toast2, "Read the scenario first."); return; }
+
+    var z = ZONES[state.verdict.zone];
+    var prompt = FRAMEWORK +
+      "\n\n---\nA certificate student placed this scenario in the " + z.name + ".\n\n" +
+      scenarioText(state.scenario) +
+      "\n\nThey have drafted the artifact below. Review it against the framework.\n\n--- DRAFT ---\n" + draft.slice(0, 8000) +
+      "\n--- END DRAFT ---\n\n" +
+      "Write 150-220 words of plain prose, no headings or bullets. Cover, in order: whether the draft stays inside the zone it was placed in or crosses into a more restricted one, and where exactly; " +
+      "any boundary condition it violates or leaves unaddressed; and whether it shows the sycophancy-delusion loop — validating language, removed struggle, anything that substitutes for human relationship rather than pointing back toward it. " +
+      "End with the single most important change. Be direct and specific to their words. Do not praise the draft or soften a real problem; this is a teaching review, not encouragement.";
+
+    el["review-box"].hidden = false;
+    el.review.textContent = "Thinking…";
+    el["b-review"].disabled = true;
+    state.reviewCtl = new AbortController();
+
+    state.sample(prompt, {
+      modelTier: "default",
+      cache: false,
+      signal: state.reviewCtl.signal,
+      onText: function (u) { el.review.textContent = u.text; }
+    }).then(function (res) {
+      el.review.textContent = res.text;
+    }).catch(function (err) {
+      var code = err && err.code;
+      if (code === "cancelled") { el["review-box"].hidden = true; return; }
+      if (err && err.text) { el.review.textContent = err.text; return; }
+      el.review.textContent = code === "rate_limited"
+        ? "Claude is busy right now. Try the review again in a minute."
+        : "The review didn't come through. Try again.";
+    }).then(function () {
+      el["b-review"].disabled = false;
+    });
+  });
+
+  // ---------- portfolio ----------
+  function renderSaved() {
+    el.saved.textContent = "";
+    if (!state.saved.length) {
+      var d = document.createElement("div");
+      d.className = "empty";
+      d.textContent = "Scenarios you save appear here, with the zone each one landed in.";
+      el.saved.appendChild(d);
+      return;
+    }
+    state.saved.forEach(function (s) {
+      var row = document.createElement("div");
+      row.className = "saved-item";
+      row.tabIndex = 0;
+      var badge = document.createElement("span");
+      badge.className = "saved-badge b-" + (s.zone || "boundary");
+      badge.textContent = (ZONES[s.zone] || ZONES.boundary).name.split(" ")[0];
+      var t = document.createElement("span");
+      t.className = "saved-title";
+      t.textContent = s.intent || "Untitled scenario";
+      var dt = document.createElement("span");
+      dt.className = "saved-date";
+      dt.textContent = s.date || "";
+      row.appendChild(badge); row.appendChild(t); row.appendChild(dt);
+      function open() {
+        el["f-intent"].value = s.intent || "";
+        setSelect(el["f-role"], el["f-role-other"], s.role);
+        setSelect(el["f-who"], el["f-who-other"], s.who);
+        el["f-context"].value = s.context || "";
+        el["f-draft"].value = s.draft || "";
+        state.scenario = { intent: s.intent, role: s.role, who: s.who, context: s.context };
+        if (s.verdict) {
+          try {
+            state.verdict = JSON.parse(s.verdict);
+            renderVerdict(state.verdict);
+            el["step-verdict"].hidden = false;
+            el["step-draft"].hidden = false;
+          } catch (e) {}
+        }
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+      row.addEventListener("click", open);
+      row.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } });
+      el.saved.appendChild(row);
+    });
+  }
+
+  el["b-save"].addEventListener("click", function () {
+    if (!state.scenario || !state.verdict) { flash(el.toast2, "Read the scenario before saving it."); return; }
+    var now = new Date();
+    var rec = {
+      intent: state.scenario.intent,
+      role: state.scenario.role,
+      who: state.scenario.who,
+      context: state.scenario.context || "",
+      zone: state.verdict.zone,
+      verdict: JSON.stringify(state.verdict),
+      draft: el["f-draft"].value.trim(),
+      review: el.review.textContent === "Thinking…" ? "" : el.review.textContent,
+      date: now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0"),
+      ts: Date.now()
+    };
+
+    if (!state.col) {
+      rec.id = "local-" + rec.ts;
+      state.saved.unshift(rec);
+      renderSaved();
+      flash(el.toast2, "Saved for this visit only.");
+      return;
+    }
+
+    var id = (self.crypto && self.crypto.randomUUID) ? self.crypto.randomUUID() : "s" + rec.ts;
+    el["b-save"].disabled = true;
+    state.col.doc(id).set(rec).then(function () {
+      flash(el.toast2, "Saved to your portfolio.");
+    }).catch(function () {
+      flash(el.toast2, "Couldn't save that one. Try again.");
+    }).then(function () {
+      el["b-save"].disabled = false;
+    });
+  });
+
+  renderSaved();
+
+  // ---------- boot ----------
+  (async function init() {
+    var api = window.claude;
+    if (!api || typeof api.use !== "function") {
+      banner("This view can't reach Claude, so the studio can't place scenarios or run reviews.");
+      return;
+    }
+
+    try { state.sample = await api.use("sample"); } catch (e) { state.sample = null; }
+    if (!state.sample) banner("This view can't reach Claude, so the studio can't place scenarios or run reviews.");
+
+    var db = null, user = null;
+    try { db = await api.use("db"); } catch (e) {}
+    try { user = await api.use("user"); } catch (e) {}
+    var uid = user ? await user.id() : null;
+    if (!db || !uid) return;
+
+    state.col = db.collection("data/users/" + uid);
+    state.col.orderBy("ts", "desc").limit(100).onSnapshot(function (snap) {
+      state.saved = snap.docs.map(function (d) {
+        var x = d.data() || {};
+        return {
+          id: d.id, intent: String(x.intent || ""), role: String(x.role || ""), who: String(x.who || ""),
+          context: String(x.context || ""), zone: String(x.zone || "boundary"), verdict: String(x.verdict || ""),
+          draft: String(x.draft || ""), review: String(x.review || ""), date: String(x.date || ""), ts: Number(x.ts) || 0
+        };
+      });
+      renderSaved();
+    }, function () {});
+  })();
+})();
+</script>
+</body>
+</html>
