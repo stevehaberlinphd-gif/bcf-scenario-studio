@@ -33,10 +33,11 @@ module.exports = async function handler(req, res) {
       body: JSON.stringify({
         model: process.env.ANTHROPIC_MODEL || "claude-sonnet-5-5",
         max_tokens: 2500,
-        messages: [{ role: "user", content: prompt }],
+        messages: [{ role: "user", content: schema
+          ? prompt + "\n\nGive your answer by calling the respond tool, not as text."
+          : prompt }],
         ...(schema ? {
-          tools: [{ name: "respond", description: "Return the structured answer.", input_schema: schema }],
-          tool_choice: { type: "tool", name: "respond" }
+          tools: [{ name: "respond", description: "Return the structured answer. Always use this tool to answer.", input_schema: schema }]
         } : {})
       })
     });
