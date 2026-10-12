@@ -18,6 +18,14 @@ The page was built as a Claude artifact and uses the artifact runtime (`window.c
 | `db` | Saving scenarios to the user's portfolio |
 | `user` | Scoping the portfolio to the signed-in viewer |
 
-Opened outside claude.ai (for example via GitHub Pages or a local file), the page loads and shows the framework reference, but it displays a banner saying it can't reach Claude, and the reading and review steps won't run. Portfolio saves fall back to "this visit only." Running it standalone would mean replacing `state.sample` with calls to the Claude API (through a small backend that holds the API key) and swapping `db` for another store.
+## Running on Vercel
+
+Outside claude.ai the page sends its Claude requests to `api/claude.js`, a Vercel serverless function that calls the Claude API. Saved scenarios are kept in the visitor's browser (localStorage).
+
+1. In the Vercel project, open **Settings → Environment Variables** and add `ANTHROPIC_API_KEY` (from console.anthropic.com).
+2. Optionally add `ANTHROPIC_MODEL` to choose a different model (default `claude-sonnet-5-5`).
+3. Redeploy.
+
+Note: the endpoint is open to anyone who has the site URL, and every request is billed to your API key. Set a spend limit in the Anthropic Console, and add Vercel password protection if the site is only for your cohort.
 
 Live version: claude.ai artifact "BCF Scenario Studio".

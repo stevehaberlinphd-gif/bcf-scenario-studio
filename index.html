@@ -613,6 +613,8 @@
       if (code === "not_granted" || code === "sampling_disabled") {
         el["v-rationale"].textContent = "This view isn't allowed to use Claude, so the studio can't place the scenario.";
         state.sample = null;
+      } else if (code === "missing_key") {
+        el["v-rationale"].textContent = "The server has no Claude API key yet. Add ANTHROPIC_API_KEY in the Vercel project settings and redeploy.";
       } else if (code === "rate_limited") {
         el["v-rationale"].textContent = "Claude is busy right now. Wait a minute and read it again.";
       } else {
@@ -731,7 +733,8 @@
       rec.id = "local-" + rec.ts;
       state.saved.unshift(rec);
       renderSaved();
-      flash(el.toast2, "Saved for this visit only.");
+      var kept = state.saveLocal && state.saveLocal();
+      flash(el.toast2, kept ? "Saved in this browser." : "Saved for this visit only.");
       return;
     }
 
@@ -748,11 +751,58 @@
 
   renderSaved();
 
+  // ---------- standalone mode (e.g. Vercel): Claude via /api/claude, portfolio in localStorage ----------
+  var LS_KEY = "bcf-studio-portfolio";
+
+  function makeServerSample() {
+    function call(prompt) {
+      return fetch("/api/claude", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ prompt: prompt })
+      }).then(function (r) {
+        return r.json().catch(function () { return {}; }).then(function (d) {
+          if (!r.ok) {
+            if (d && d.message) console.error("Claude API:", d.message);
+            throw { code: (d && d.error) || "error" };
+          }
+          return String(d.text || "");
+        });
+      });
+    }
+    var sample = function (prompt, opts) {
+      return call(prompt).then(function (t) {
+        if (opts && opts.onText) opts.onText({ text: t });
+        return { text: t };
+      });
+    };
+    sample.json = function (prompt) {
+      return call(prompt).then(function (t) {
+        var m = t.match(/\{[\s\S]*\}/);
+        if (!m) throw { code: "invalid_json" };
+        return JSON.parse(m[0]);
+      });
+    };
+    return sample;
+  }
+
+  function loadLocal() {
+    try { var x = JSON.parse(localStorage.getItem(LS_KEY) || "[]"); return Array.isArray(x) ? x : []; }
+    catch (e) { return []; }
+  }
+  function saveLocal() {
+    try { localStorage.setItem(LS_KEY, JSON.stringify(state.saved.slice(0, 100))); return true; }
+    catch (e) { return false; }
+  }
+  state.saveLocal = saveLocal;
+
   // ---------- boot ----------
   (async function init() {
     var api = window.claude;
     if (!api || typeof api.use !== "function") {
-      banner("This view can't reach Claude, so the studio can't place scenarios or run reviews.");
+      state.sample = makeServerSample();
+      state.saved = loadLocal();
+      renderSaved();
       return;
     }
 
