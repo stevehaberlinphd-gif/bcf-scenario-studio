@@ -6,71 +6,80 @@
 <title>BCF Scenario Studio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&family=Source+Sans+3:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap">
 <style>
   /* Layout: stepped workbench — compose a scenario, read its BCF placement, then draft and review the artifact. */
+  /* Brand palette: navy #0d1821, sand #f0ece4, gold #c9a96e, sage #8a9a82. Playfair Display + Inter. */
   :root {
-    --bg: #f5f6f4;
-    --surface: #ffffff;
-    --surface-2: #eceeea;
-    --line: #dde0da;
-    --line-soft: #e8eae5;
-    --ink: #1b201d;
-    --ink-soft: #596159;
-    --ink-faint: #868f86;
-    --accent: #186b63;
-    --accent-soft: #e2efec;
-    --on-accent: #ffffff;
+    --navy: #0d1821;
+    --sand: #f0ece4;
+    --gold: #c9a96e;
+    --sage: #8a9a82;
+
+    --bg: #f0ece4;
+    --surface: #faf8f4;
+    --surface-2: #f4f0e8;
+    --line: #ddd5c6;
+    --line-soft: #e8e2d6;
+    --ink: #0d1821;
+    --ink-soft: #46525c;
+    --ink-faint: #737b83;
+    --accent: #c9a96e;
+    --accent-ink: #84652a;
+    --accent-soft: #f1e7d3;
+    --on-accent: #0d1821;
     --inner: #a8432e;
-    --inner-soft: #f7e7e2;
-    --boundary: #9a6b12;
-    --boundary-soft: #f8eedb;
-    --outer: #2f6b3c;
-    --outer-soft: #e4f0e5;
-    --display: "Instrument Serif", Georgia, "Times New Roman", serif;
-    --ui: "Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --inner-soft: #f6e3dc;
+    --boundary: #84652a;
+    --boundary-soft: #f1e7d3;
+    --outer: #56684f;
+    --outer-soft: #e3e8df;
+    --display: "Playfair Display", Georgia, "Times New Roman", serif;
+    --ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
     --data: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #141715;
-      --surface: #1c201e;
-      --surface-2: #242925;
-      --line: #333933;
-      --line-soft: #2a302b;
-      --ink: #e9ece8;
-      --ink-soft: #a0a8a0;
-      --ink-faint: #79817a;
-      --accent: #5fc4b6;
-      --accent-soft: #1b312e;
-      --on-accent: #10201e;
+      --bg: #0d1821;
+      --surface: #142330;
+      --surface-2: #1a2c3a;
+      --line: #2a3d4c;
+      --line-soft: #213341;
+      --ink: #f0ece4;
+      --ink-soft: #bdb7ac;
+      --ink-faint: #8b9298;
+      --accent: #c9a96e;
+      --accent-ink: #d8bd88;
+      --accent-soft: #2a2a22;
+      --on-accent: #0d1821;
       --inner: #e0866f;
-      --inner-soft: #33211c;
-      --boundary: #d6a84a;
-      --boundary-soft: #322917;
-      --outer: #7bc08a;
-      --outer-soft: #1d2b20;
+      --inner-soft: #33221e;
+      --boundary: #d8bd88;
+      --boundary-soft: #2a2a22;
+      --outer: #a7b69f;
+      --outer-soft: #1f2d2a;
       color-scheme: dark;
     }
   }
   :root[data-theme="dark"] {
-    --bg: #141715;
-    --surface: #1c201e;
-    --surface-2: #242925;
-    --line: #333933;
-    --line-soft: #2a302b;
-    --ink: #e9ece8;
-    --ink-soft: #a0a8a0;
-    --ink-faint: #79817a;
-    --accent: #5fc4b6;
-    --accent-soft: #1b312e;
-    --on-accent: #10201e;
+    --bg: #0d1821;
+    --surface: #142330;
+    --surface-2: #1a2c3a;
+    --line: #2a3d4c;
+    --line-soft: #213341;
+    --ink: #f0ece4;
+    --ink-soft: #bdb7ac;
+    --ink-faint: #8b9298;
+    --accent: #c9a96e;
+    --accent-ink: #d8bd88;
+    --accent-soft: #2a2a22;
+    --on-accent: #0d1821;
     --inner: #e0866f;
-    --inner-soft: #33211c;
-    --boundary: #d6a84a;
-    --boundary-soft: #322917;
-    --outer: #7bc08a;
-    --outer-soft: #1d2b20;
+    --inner-soft: #33221e;
+    --boundary: #d8bd88;
+    --boundary-soft: #2a2a22;
+    --outer: #a7b69f;
+    --outer-soft: #1f2d2a;
     color-scheme: dark;
   }
 
@@ -83,21 +92,29 @@
   }
   .wrap { max-width: 56rem; margin: 0 auto; padding-inline: 20px; padding-block: 2.5rem 4rem; }
 
-  .mast { margin-bottom: 2rem; }
-  .eyebrow { font-size: .67rem; letter-spacing: .15em; text-transform: uppercase; color: var(--ink-faint); font-weight: 700; }
-  h1 {
-    font-family: var(--display); font-weight: 400; font-size: clamp(2.1rem, 7vw, 3rem);
-    margin: .25rem 0 0; line-height: 1.05; letter-spacing: -.01em; text-wrap: balance;
+  .hero { background: var(--navy); color: var(--sand); border-bottom: 1px solid var(--line); }
+  .hero-in { max-width: 56rem; margin: 0 auto; padding: 1.1rem 20px 2.75rem; }
+  .brand {
+    display: flex; align-items: center; gap: .6rem;
+    font-family: var(--display); font-size: 1.1rem; font-weight: 500; color: var(--sand);
+    padding-bottom: 1.1rem; margin-bottom: 2.25rem; border-bottom: 1px solid rgba(240,236,228,.14);
   }
-  .sub { color: var(--ink-soft); margin: .5rem 0 0; max-width: 40rem; }
+  .brand svg { width: 26px; height: 26px; flex: none; }
+  .eyebrow { font-size: .68rem; letter-spacing: .16em; text-transform: uppercase; color: var(--gold); font-weight: 600; }
+  h1 {
+    font-family: var(--display); font-weight: 500; font-size: clamp(2.1rem, 7vw, 3.1rem); color: var(--sand);
+    margin: .4rem 0 0; line-height: 1.08; letter-spacing: -.01em; text-wrap: balance;
+  }
+  .sub { color: rgba(240,236,228,.78); margin: .75rem 0 0; max-width: 40rem; }
+  .wrap { padding-block: .5rem 4rem; }
 
   .step { margin-top: 2rem; }
   .step-head { display: flex; align-items: baseline; gap: .7rem; margin-bottom: .9rem; }
   .step-num {
-    font-family: var(--data); font-size: .7rem; font-weight: 500; color: var(--accent);
+    font-family: var(--data); font-size: .7rem; font-weight: 500; color: var(--accent-ink);
     border: 1px solid var(--accent); border-radius: 999px; padding: .1rem .5rem; flex: none;
   }
-  .step-title { font-family: var(--display); font-size: 1.5rem; font-weight: 400; margin: 0; letter-spacing: -.005em; }
+  .step-title { font-family: var(--display); font-size: 1.5rem; font-weight: 500; margin: 0; letter-spacing: -.005em; }
 
   .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 1.35rem; }
 
@@ -108,7 +125,7 @@
     background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-soft);
     border-radius: 999px; padding: .32rem .75rem;
   }
-  .chip:hover { border-color: var(--accent); color: var(--ink); }
+  .chip:hover { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); }
 
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: .9rem; }
   @media (max-width: 620px) { .grid2 { grid-template-columns: 1fr; } }
@@ -121,7 +138,7 @@
   }
   textarea { resize: vertical; min-height: 5rem; line-height: 1.5; }
   input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible {
-    outline: 2px solid var(--accent); outline-offset: 1px;
+    outline: 2px solid var(--accent-ink); outline-offset: 1px;
   }
 
   button {
@@ -130,6 +147,8 @@
   }
   button:disabled { opacity: .45; cursor: default; }
   .btn-primary { background: var(--accent); color: var(--on-accent); }
+  .btn-primary:hover:not(:disabled) { filter: brightness(1.06); }
+  .ref-body a, .cite a { color: var(--accent-ink); }
   .btn-quiet { background: transparent; border-color: var(--line); color: var(--ink-soft); font-weight: 500; font-size: .83rem; padding: .4rem .8rem; }
   .foot { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1.1rem; flex-wrap: wrap; }
   .toast { font-size: .83rem; color: var(--ink-soft); }
@@ -144,7 +163,7 @@
     font-family: var(--data); font-size: 9px; letter-spacing: .08em; text-transform: uppercase;
   }
 
-  .zone-name { font-family: var(--display); font-size: 1.7rem; margin: 0; line-height: 1.1; }
+  .zone-name { font-family: var(--display); font-weight: 500; font-size: 1.7rem; margin: 0; line-height: 1.1; }
   .zone-head { font-size: .95rem; color: var(--ink-soft); margin: .25rem 0 0; }
   .rationale { margin: .9rem 0 0; }
 
@@ -198,7 +217,7 @@
   .ref-body { padding: 0 1.35rem 1.35rem; }
   .ref-zone { margin-top: 1.1rem; padding-top: 1.1rem; border-top: 1px solid var(--line-soft); }
   .ref-zone:first-child { border-top: none; padding-top: 0; }
-  .ref-zone h4 { margin: 0 0 .3rem; font-family: var(--display); font-weight: 400; font-size: 1.2rem; }
+  .ref-zone h4 { margin: 0 0 .3rem; font-family: var(--display); font-weight: 500; font-size: 1.2rem; }
   .ref-zone p { margin: 0 0 .4rem; font-size: .9rem; color: var(--ink-soft); }
   .ref-zone ul { margin: 0; padding-left: 1.15rem; font-size: .9rem; color: var(--ink-soft); }
   .cite { margin-top: 1.4rem; font-size: .8rem; color: var(--ink-faint); line-height: 1.5; }
@@ -214,13 +233,23 @@
 </head>
 <body>
 
-<div class="wrap">
-  <header class="mast">
+<header class="hero">
+  <div class="hero-in">
+    <div class="brand">
+      <svg viewBox="0 0 26 26" aria-hidden="true">
+        <circle cx="13" cy="13" r="12" fill="none" stroke="#c9a96e" stroke-width="1.4"/>
+        <circle cx="13" cy="13" r="7.5" fill="none" stroke="#c9a96e" stroke-width="1.4"/>
+        <circle cx="13" cy="13" r="3" fill="#c9a96e"/>
+      </svg>
+      BCF Scenario Studio
+    </div>
     <span class="eyebrow">Mindful AI Practitioner Certificate</span>
     <h1>BCF Scenario Studio</h1>
     <p class="sub">Describe something you want to do with AI in your teaching. The studio places it in the Bounded Convergence Framework, names the conditions it triggers, then lets you draft the artifact and review it against the zone it sits in.</p>
-  </header>
+  </div>
+</header>
 
+<div class="wrap">
   <div id="banner" class="banner" hidden></div>
 
   <section class="step">
