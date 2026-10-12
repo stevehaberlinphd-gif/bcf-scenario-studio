@@ -451,6 +451,21 @@
     "GOVERNANCE PRINCIPLES (16 non-negotiables) include: contraindication screening and clinical governance; crisis escalation architecture; AI identity disclosure; vault-only sourcing and containment; the Anti-Scaffolding Imperative; age restriction for adolescents; equity-informed governance; AI never serves as primary teacher.\n\n" +
     "SYCOPHANCY-DELUSION LOOP — the central structural design failure. AI that validates without challenging. Lost struggle (unconditional validation removes the difficulty practitioners need, producing 'flabby mindfulness'); frictionless substitution (AI relationships reduce motivation for harder human ones); misaligned commercial incentives. Good design de-centers the self and leaves the user more connected to others.";
 
+  var VERDICT_SCHEMA = {
+    type: "object",
+    properties: {
+      zone: { type: "string", enum: ["inner", "boundary", "outer"] },
+      headline: { type: "string" },
+      rationale: { type: "string" },
+      rules: { type: "array", items: { type: "object", properties: {
+        name: { type: "string" }, status: { type: "string", enum: ["clear", "caution", "stop"] }, detail: { type: "string" }
+      }, required: ["name", "status", "detail"] } },
+      safeguards: { type: "array", items: { type: "string" } },
+      shift: { type: "string" }
+    },
+    required: ["zone", "headline", "rationale", "rules", "safeguards", "shift"]
+  };
+
   var state = { col: null, sample: null, scenario: null, verdict: null, saved: [], reviewCtl: null };
 
   var el = {};
@@ -555,7 +570,7 @@
       'Use status "stop" where the framework forbids what is proposed, "caution" where it is conditional, "clear" where it is not engaged. ' +
       "Give 2 to 5 safeguards, each a concrete action this practitioner must take. Be direct; do not soften a placement in the inner periphery.";
 
-    return state.sample.json(prompt, { modelTier: "default" });
+    return state.sample.json(prompt, { modelTier: "default", schema: VERDICT_SCHEMA });
   }
 
   function renderVerdict(v) {
@@ -788,32 +803,39 @@
   var LS_KEY = "bcf-studio-portfolio";
 
   function makeServerSample() {
-    function call(prompt) {
+    function call(prompt, schema) {
       return fetch("/api/claude", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ prompt: prompt })
+        body: JSON.stringify(schema ? { prompt: prompt, schema: schema } : { prompt: prompt })
       }).then(function (r) {
         return r.json().catch(function () { return {}; }).then(function (d) {
           if (!r.ok) {
             if (d && d.message) console.error("Claude API:", d.message);
             throw { code: (d && d.error) || ("http_" + r.status), message: (d && d.message) || ("Server returned " + r.status) };
           }
-          return String(d.text || "");
+          return d;
         });
       });
     }
     var sample = function (prompt, opts) {
-      return call(prompt).then(function (t) {
+      return call(prompt).then(function (d) {
+        var t = String(d.text || "");
         if (opts && opts.onText) opts.onText({ text: t });
         return { text: t };
       });
     };
-    sample.json = function (prompt) {
-      return call(prompt).then(function (t) {
-        var m = t.match(/\{[\s\S]*\}/);
-        if (!m) throw { code: "invalid_json" };
-        return JSON.parse(m[0]);
+    function parseReply(d) {
+      if (d && d.data && typeof d.data === "object") return d.data;
+      var m = String((d && d.text) || "").match(/\{[\s\S]*\}/);
+      if (!m) throw { code: "invalid_json" };
+      return JSON.parse(m[0]);
+    }
+    sample.json = function (prompt, opts) {
+      var schema = opts && opts.schema;
+      return call(prompt, schema).then(parseReply).catch(function (err) {
+        if (err && err.code && err.code !== "invalid_json") throw err;
+        return call(prompt, schema).then(parseReply); // one retry on a malformed reply
       });
     };
     return sample;

@@ -18,6 +18,7 @@ module.exports = async function handler(req, res) {
     try { body = JSON.parse(body || "{}"); } catch (e) { body = {}; }
   }
   var prompt = String((body && body.prompt) || "");
+  var schema = body && body.schema && typeof body.schema === "object" ? body.schema : null;
   if (!prompt) return res.status(400).json({ error: "empty_prompt" });
   if (prompt.length > 20000) return res.status(413).json({ error: "prompt_too_long" });
 
@@ -31,8 +32,12 @@ module.exports = async function handler(req, res) {
       },
       body: JSON.stringify({
         model: process.env.ANTHROPIC_MODEL || "claude-sonnet-5-5",
-        max_tokens: 1500,
-        messages: [{ role: "user", content: prompt }]
+        max_tokens: 2500,
+        messages: [{ role: "user", content: prompt }],
+        ...(schema ? {
+          tools: [{ name: "respond", description: "Return the structured answer.", input_schema: schema }],
+          tool_choice: { type: "tool", name: "respond" }
+        } : {})
       })
     });
     var data = await r.json().catch(function () { return {}; });
@@ -50,7 +55,8 @@ module.exports = async function handler(req, res) {
       .filter(function (b) { return b.type === "text"; })
       .map(function (b) { return b.text; })
       .join("");
-    return res.status(200).json({ text: text });
+    var tool = (data.content || []).filter(function (b) { return b.type === "tool_use"; })[0];
+    return res.status(200).json(tool ? { text: text, data: tool.input } : { text: text });
   } catch (e) {
     return res.status(502).json({ error: "network_error", message: String(e && e.message || e) });
   }

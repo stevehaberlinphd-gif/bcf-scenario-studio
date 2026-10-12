@@ -17,6 +17,7 @@ export default async (req) => {
   let body = {};
   try { body = await req.json(); } catch (e) { body = {}; }
   const prompt = String((body && body.prompt) || "");
+  const schema = body && body.schema && typeof body.schema === "object" ? body.schema : null;
   if (!prompt) return Response.json({ error: "empty_prompt" }, { status: 400 });
   if (prompt.length > 20000) return Response.json({ error: "prompt_too_long" }, { status: 413 });
 
@@ -30,8 +31,12 @@ export default async (req) => {
       },
       body: JSON.stringify({
         model: process.env.ANTHROPIC_MODEL || "claude-sonnet-5-5",
-        max_tokens: 1500,
-        messages: [{ role: "user", content: prompt }]
+        max_tokens: 2500,
+        messages: [{ role: "user", content: prompt }],
+        ...(schema ? {
+          tools: [{ name: "respond", description: "Return the structured answer.", input_schema: schema }],
+          tool_choice: { type: "tool", name: "respond" }
+        } : {})
       })
     });
     const data = await r.json().catch(() => ({}));
@@ -48,7 +53,8 @@ export default async (req) => {
       .filter((b) => b.type === "text")
       .map((b) => b.text)
       .join("");
-    return Response.json({ text });
+    const tool = (data.content || []).find((b) => b.type === "tool_use");
+    return Response.json(tool ? { text, data: tool.input } : { text });
   } catch (e) {
     return Response.json({ error: "network_error", message: String((e && e.message) || e) }, { status: 502 });
   }
